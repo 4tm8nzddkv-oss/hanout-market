@@ -267,6 +267,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .service-toggle{background:none;border:1.5px solid var(--gray-border);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--gray-text);transition:all 0.15s;}
 .service-toggle.on{background:var(--green-light);border-color:var(--green);color:var(--green-dark);}
 .spacer{height:12px;}
+/* PAYMENT MODES */
+.pay-opt{background:#fff;border:2px solid var(--gray-border);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.15s;}
+.pay-opt.active{border-color:var(--green);background:var(--green-light);}
+.pay-opt-label{font-size:11px;font-weight:700;color:var(--gray-text);}
+.pay-opt.active .pay-opt-label{color:var(--green-dark);}
+@keyframes scanLine{0%{top:5%;}50%{top:90%;}100%{top:5%;}}
+
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
@@ -470,14 +477,91 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
     <button class="credit-use-btn" id="wallet-use-btn" onclick="useWallet()">Utiliser</button>
   </div>
-  <!-- QR PAYMENT -->
-  <div id="qr-section" style="display:none;margin:12px 16px 0;background:#EDE9FE;border:1.5px solid #7C3AED;border-radius:12px;padding:14px;text-align:center;cursor:pointer;" onclick="openQRModal()">
-    <div style="font-size:32px;margin-bottom:4px;">📲</div>
-    <div style="font-size:14px;font-weight:700;color:#7C3AED;">Payer par QR Code</div>
-    <div style="font-size:11px;color:#7C3AED;opacity:0.8;">CIH · Attijariwafa · BMCE · CMI</div>
-  </div>
   <div class="order-summary" id="order-summary"></div>
-  <button class="checkout-btn" id="checkout-btn" onclick="placeOrder()">Confirmer la commande</button>
+
+  <!-- 3 MODES DE PAIEMENT -->
+  <div id="payment-section" style="display:none;padding:0 16px 16px;">
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;">Mode de paiement</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <!-- CARTE BANCAIRE -->
+      <div class="pay-opt active" id="pay-card" onclick="selectPayMode('card',this)">
+        <div style="font-size:22px;margin-bottom:4px;">💳</div>
+        <div class="pay-opt-label">Carte</div>
+      </div>
+      <!-- QR CODE SCANNER -->
+      <div class="pay-opt" id="pay-qr" onclick="selectPayMode('qr',this)">
+        <div style="font-size:22px;margin-bottom:4px;">📲</div>
+        <div class="pay-opt-label">Scanner QR</div>
+      </div>
+      <!-- CASH -->
+      <div class="pay-opt" id="pay-cash" onclick="selectPayMode('cash',this)">
+        <div style="font-size:22px;margin-bottom:4px;">💵</div>
+        <div class="pay-opt-label">Cash</div>
+      </div>
+    </div>
+
+    <!-- CARTE BANCAIRE FORM -->
+    <div id="pay-card-section">
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--gray-border);padding:14px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text);">💳 Informations carte</div>
+        <input id="card-num" type="tel" maxlength="19" placeholder="0000 0000 0000 0000" oninput="formatCardNum(this)"
+          style="width:100%;padding:11px 13px;border-radius:9px;border:1.5px solid var(--gray-border);font-size:15px;letter-spacing:2px;outline:none;margin-bottom:9px;font-family:inherit;box-sizing:border-box;"/>
+        <div style="display:flex;gap:9px;">
+          <input id="card-exp" type="tel" maxlength="5" placeholder="MM/AA" oninput="formatExp(this)"
+            style="flex:1;padding:11px 13px;border-radius:9px;border:1.5px solid var(--gray-border);font-size:14px;outline:none;font-family:inherit;"/>
+          <input id="card-cvv" type="tel" maxlength="3" placeholder="CVV"
+            style="width:80px;padding:11px 13px;border-radius:9px;border:1.5px solid var(--gray-border);font-size:14px;outline:none;font-family:inherit;"/>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;">
+          <span style="font-size:20px;">💳</span><span style="font-size:20px;">🏦</span>
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 30'%3E%3Crect width='50' height='30' rx='4' fill='%23EB001B'/%3E%3Ccircle cx='19' cy='15' r='10' fill='%23EB001B'/%3E%3Ccircle cx='31' cy='15' r='10' fill='%23F79E1B'/%3E%3Ccircle cx='25' cy='15' r='7' fill='%23FF5F00'/%3E%3C/svg%3E" style="height:22px;border-radius:3px;" alt="mastercard"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR SCANNER SECTION -->
+    <div id="pay-qr-section" style="display:none;">
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--gray-border);padding:14px;text-align:center;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text);">📲 Scanner le QR code du hanout</div>
+        <div style="font-size:12px;color:var(--gray-text);margin-bottom:14px;">Pointe ta caméra vers le QR code affiché chez le commerçant</div>
+        <!-- CAMERA VIEWFINDER -->
+        <div style="position:relative;width:100%;aspect-ratio:1;background:#000;border-radius:12px;overflow:hidden;margin-bottom:12px;" id="scanner-container">
+          <video id="qr-video" style="width:100%;height:100%;object-fit:cover;" autoplay playsinline muted></video>
+          <canvas id="qr-canvas" style="display:none;"></canvas>
+          <!-- VIEWFINDER OVERLAY -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <div style="width:200px;height:200px;position:relative;">
+              <!-- corners -->
+              <div style="position:absolute;top:0;left:0;width:30px;height:30px;border-top:3px solid #7FE9C4;border-left:3px solid #7FE9C4;border-radius:3px 0 0 0;"></div>
+              <div style="position:absolute;top:0;right:0;width:30px;height:30px;border-top:3px solid #7FE9C4;border-right:3px solid #7FE9C4;border-radius:0 3px 0 0;"></div>
+              <div style="position:absolute;bottom:0;left:0;width:30px;height:30px;border-bottom:3px solid #7FE9C4;border-left:3px solid #7FE9C4;border-radius:0 0 0 3px;"></div>
+              <div style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-bottom:3px solid #7FE9C4;border-right:3px solid #7FE9C4;border-radius:0 0 3px 0;"></div>
+              <!-- scan line -->
+              <div id="scan-line" style="position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,#7FE9C4,transparent);top:50%;animation:scanLine 2s linear infinite;"></div>
+            </div>
+          </div>
+          <!-- Status -->
+          <div id="scanner-status" style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:12px;color:#fff;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,0.8);">📷 Caméra en cours...</div>
+        </div>
+        <button onclick="startScanner()" id="start-scan-btn" style="width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">📷 Activer la caméra</button>
+        <button onclick="simulateScan()" style="width:100%;padding:9px;background:var(--gray-bg);color:var(--gray-text);border:1px solid var(--gray-border);border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;">🧪 Simuler un scan (test)</button>
+      </div>
+    </div>
+
+    <!-- CASH SECTION -->
+    <div id="pay-cash-section" style="display:none;">
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--gray-border);padding:14px;text-align:center;">
+        <div style="font-size:40px;margin-bottom:8px;">💵</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Paiement en espèces</div>
+        <div style="font-size:13px;color:var(--gray-text);margin-bottom:12px;line-height:1.6;">Règle directement chez <strong id="cash-hanout-name">le hanout</strong> au moment du retrait.</div>
+        <div style="background:var(--amber-light);border-radius:9px;padding:10px 14px;font-size:13px;color:#633806;font-weight:600;">
+          💡 Prépare l'appoint : <span id="cash-amount" style="font-size:16px;font-weight:800;">0 DH</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="checkout-btn" id="checkout-btn" onclick="handleCheckout()" style="display:none;">Confirmer la commande</button>
 </div>
 
 <!-- PAGE CONFIRMATION -->
@@ -2352,4 +2436,301 @@ window.placeOrder=function(){
   if(koEl) koEl.textContent=parseInt(koEl.textContent||'23')+1;
   if(krEl) krEl.textContent=parseInt(krEl.textContent||'847')+Math.round(sub);
 };
+
+// ============ PAYMENT SYSTEM ============
+let currentPayMode = 'card';
+let scannerStream = null;
+let scannerInterval = null;
+
+function renderCart(){
+  const qrs = document.getElementById('qr-section');
+  const cw = document.getElementById('credit-widget');
+  const ps = document.getElementById('payment-section');
+  const cb = document.getElementById('checkout-btn');
+  const c = document.getElementById('cart-list-container');
+  document.getElementById('wallet-display').textContent = walletBalance;
+
+  if(cart.length === 0){
+    c.innerHTML = `<div class="cart-empty"><div class="cart-empty-emoji">🛒</div><div style="font-size:14px;color:var(--gray-text);">Panier vide. Commande chez un hanout !</div></div>`;
+    document.getElementById('order-summary').innerHTML = '';
+    if(cb) cb.style.display = 'none';
+    if(cw) cw.style.display = 'none';
+    if(ps) ps.style.display = 'none';
+    return;
+  }
+
+  if(cb) cb.style.display = 'block';
+  if(cw) cw.style.display = 'flex';
+  if(ps) ps.style.display = 'block';
+
+  c.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-emoji">${item.img ? `<img src="${item.img}" alt="${item.name}"/>` : item.emoji}</div>
+      <div class="cart-item-info"><div class="cart-item-name">${item.name}</div><div class="cart-item-store">${item.hanout}</div></div>
+      <div class="qty-control">
+        <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+        <span class="qty-val">${item.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+      </div>
+      <div class="cart-item-price">${(item.price*item.qty).toFixed(1)} DH</div>
+      <button class="cart-item-remove" onclick="removeFromCart(${item.id})">✕</button>
+    </div>`).join('');
+
+  renderSummary();
+  updateCashAmount();
+  // Update cash hanout name
+  const chn = document.getElementById('cash-hanout-name');
+  if(chn) chn.textContent = HANOUTS[currentHanout]?.name || 'le hanout';
+}
+
+function selectPayMode(mode, el){
+  currentPayMode = mode;
+  document.querySelectorAll('.pay-opt').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Hide all sections
+  ['pay-card-section','pay-qr-section','pay-cash-section'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+  // Show selected
+  const target = document.getElementById('pay-' + mode + '-section');
+  if(target) target.style.display = 'block';
+  // Stop scanner if switching away
+  if(mode !== 'qr') stopScanner();
+  if(mode === 'cash') updateCashAmount();
+  // Update button text
+  const btn = document.getElementById('checkout-btn');
+  if(btn){
+    if(mode === 'card') btn.textContent = '💳 Payer par carte';
+    else if(mode === 'qr') btn.textContent = '📲 Scanner & Payer';
+    else btn.textContent = '💵 Commander — Payer en cash';
+  }
+}
+
+function updateCashAmount(){
+  const sub = cart.reduce((a,i) => a+i.price*i.qty, 0);
+  const fee = delivery === 'livraison' ? 10 : 0;
+  const el = document.getElementById('cash-amount');
+  if(el) el.textContent = (sub + fee).toFixed(1) + ' DH';
+}
+
+function formatCardNum(input){
+  let v = input.value.replace(/\D/g,'').substring(0,16);
+  input.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function formatExp(input){
+  let v = input.value.replace(/\D/g,'').substring(0,4);
+  if(v.length >= 3) v = v.substring(0,2) + '/' + v.substring(2);
+  input.value = v;
+}
+
+// ============ MAIN CHECKOUT HANDLER ============
+function handleCheckout(){
+  if(cart.length === 0) return;
+  if(currentPayMode === 'card') payByCard();
+  else if(currentPayMode === 'qr') payByQRScan();
+  else if(currentPayMode === 'cash') payByCash();
+}
+
+function payByCard(){
+  const num = document.getElementById('card-num')?.value?.replace(/\s/g,'');
+  const exp = document.getElementById('card-exp')?.value;
+  const cvv = document.getElementById('card-cvv')?.value;
+  if(!num || num.length < 16){ showToast('❌ Numéro de carte invalide'); return; }
+  if(!exp || exp.length < 5){ showToast('❌ Date d'expiration invalide'); return; }
+  if(!cvv || cvv.length < 3){ showToast('❌ CVV invalide'); return; }
+  // Simulate processing
+  const btn = document.getElementById('checkout-btn');
+  if(btn){ btn.textContent = '⏳ Traitement en cours...'; btn.disabled = true; }
+  setTimeout(() => {
+    if(btn){ btn.disabled = false; btn.textContent = '💳 Payer par carte'; }
+    showToast('✅ Paiement carte accepté !');
+    placeOrder('card');
+  }, 1800);
+}
+
+function payByCash(){
+  placeOrder('cash');
+}
+
+// ============ QR SCANNER ============
+async function startScanner(){
+  const btn = document.getElementById('start-scan-btn');
+  const status = document.getElementById('scanner-status');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: {ideal:1280}, height: {ideal:720} }
+    });
+    scannerStream = stream;
+    const video = document.getElementById('qr-video');
+    video.srcObject = stream;
+    video.play();
+    if(btn) btn.textContent = '🔴 Caméra active — Pointe vers le QR';
+    if(btn) btn.style.background = 'var(--red)';
+    if(status) status.textContent = '🔍 Scan en cours...';
+    // Start scanning frames
+    scannerInterval = setInterval(() => scanFrame(), 500);
+  } catch(err) {
+    if(status) status.textContent = '❌ Accès caméra refusé';
+    showToast('❌ Autorise l'accès à la caméra dans les paramètres');
+    console.error(err);
+  }
+}
+
+function stopScanner(){
+  if(scannerStream){
+    scannerStream.getTracks().forEach(t => t.stop());
+    scannerStream = null;
+  }
+  if(scannerInterval){ clearInterval(scannerInterval); scannerInterval = null; }
+  const btn = document.getElementById('start-scan-btn');
+  if(btn){ btn.textContent = '📷 Activer la caméra'; btn.style.background = 'var(--green)'; }
+}
+
+function scanFrame(){
+  const video = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+  if(!video || !canvas || video.readyState !== 4) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+  // Use BarcodeDetector API if available (iOS 17+, Chrome)
+  if('BarcodeDetector' in window){
+    const bd = new BarcodeDetector({formats:['qr_code']});
+    bd.detect(canvas).then(codes => {
+      if(codes.length > 0){
+        const data = codes[0].rawValue;
+        processQRData(data);
+      }
+    }).catch(()=>{});
+  }
+}
+
+function processQRData(data){
+  stopScanner();
+  const status = document.getElementById('scanner-status');
+  try {
+    // Try to parse HanoutMarket QR format
+    const qrData = JSON.parse(data);
+    if(qrData.type === 'HANOUTMARKET_PAYMENT'){
+      onQRPaymentScanned(qrData);
+    } else {
+      showToast('❌ QR code non reconnu');
+      if(status) status.textContent = '❌ QR non valide';
+    }
+  } catch(e){
+    // Try plain text format
+    if(data.startsWith('HANOUT:')){
+      const parts = data.split(':');
+      onQRPaymentScanned({ hanoutId: parseInt(parts[1]), hanoutName: parts[2] });
+    } else {
+      showToast('❌ QR code non reconnu par HanoutMarket');
+      if(status) status.textContent = '❌ QR non valide — réessaie';
+    }
+  }
+}
+
+function onQRPaymentScanned(qrData){
+  const status = document.getElementById('scanner-status');
+  if(status) status.textContent = '✅ QR reconnu !';
+  const h = HANOUTS[qrData.hanoutId] || HANOUTS[currentHanout];
+  const sub = cart.reduce((a,i) => a+i.price*i.qty, 0);
+  const fee = delivery === 'livraison' ? 10 : 0;
+  const total = (sub+fee).toFixed(1);
+  showToast('✅ QR ' + h.name + ' scanné !');
+  // Show confirmation
+  setTimeout(() => {
+    const confirmed = true; // Auto-confirm in demo
+    if(confirmed){
+      showPaymentSuccess(h.name, total, 'QR Code');
+      placeOrder('qr');
+    }
+  }, 800);
+}
+
+function simulateScan(){
+  // Simulate scanning a valid HanoutMarket QR code
+  const fakeQR = JSON.stringify({
+    type: 'HANOUTMARKET_PAYMENT',
+    hanoutId: currentHanout,
+    hanoutName: HANOUTS[currentHanout].name,
+    terminal: 'TERM-001'
+  });
+  const status = document.getElementById('scanner-status');
+  if(status) status.textContent = '🔍 Simulation scan...';
+  setTimeout(() => processQRData(fakeQR), 800);
+}
+
+function payByQRScan(){
+  if(!scannerStream){
+    showToast('📷 Active d'abord la caméra pour scanner');
+    return;
+  }
+  showToast('📲 Pointe vers le QR code du hanout...');
+}
+
+function showPaymentSuccess(hanout, amount, method){
+  showToast(`✅ ${amount} DH débités — ${hanout} crédité !`);
+}
+
+// ============ OVERRIDE placeOrder with payment method ============
+function placeOrder(payMethod){
+  if(cart.length === 0) return;
+  const sub = cart.reduce((a,i) => a+i.price*i.qty, 0);
+  const fee = delivery === 'livraison' ? 10 : 0;
+  const total = sub + fee;
+  const pts = Math.round(sub/10)*5;
+  fidelityPts += pts;
+
+  // Debit wallet if used
+  if(walletUsed) walletBalance = Math.max(0, walletBalance - sub);
+  walletUsed = false;
+
+  const h = HANOUTS[currentHanout];
+  const newOrder = {
+    id: 'CM-2026-0' + String(Date.now()).slice(-3),
+    date: new Date().toLocaleDateString('fr-FR'),
+    hanout: h.name,
+    items: cart.map(i => i.name + ' x' + i.qty),
+    total: total,
+    delivery,
+    payMethod: payMethod || currentPayMode,
+    status: 'pending',
+    rated: null
+  };
+  ORDER_HISTORY.unshift(newOrder);
+
+  // Confirm page
+  const meth = {card:'💳 Carte bancaire', qr:'📲 QR Code', cash:'💵 Cash'}[payMethod||currentPayMode]||'';
+  document.getElementById('confirm-sub').innerHTML =
+    delivery === 'livraison'
+      ? `Via Glovo depuis ${h.name}. Temps estimé : 20–30 min.<br><span style="font-size:12px;color:var(--green);font-weight:700;">${meth}</span>`
+      : `Retrait chez ${h.name} (${h.addr}) dans ~10 min.<br><span style="font-size:12px;color:var(--green);font-weight:700;">${meth}</span>`;
+
+  if(delivery === 'collect'){
+    const rem = document.getElementById('confirm-reminder');
+    const txt = document.getElementById('confirm-reminder-text');
+    if(rem) rem.style.display = 'flex';
+    if(txt) txt.textContent = 'Retirer ta commande chez ' + h.name + ' avant 20h !';
+  } else {
+    const rem = document.getElementById('confirm-reminder');
+    if(rem) rem.style.display = 'none';
+  }
+
+  // Show transaction in dashboard
+  const koEl = document.getElementById('kpi-orders');
+  const krEl = document.getElementById('kpi-revenue');
+  if(koEl) koEl.textContent = parseInt(koEl.textContent||'23') + 1;
+  if(krEl) krEl.textContent = parseInt(krEl.textContent||'847') + Math.round(total);
+
+  const pmsg = document.getElementById('points-earned-msg');
+  if(pmsg) pmsg.textContent = '🎉 +' + pts + ' pts fidélité ! Total : ' + fidelityPts + ' pts';
+
+  stopScanner();
+  cart = []; updateCartBadge();
+  updateWalletUI(); renderHistory();
+  setTimeout(renderReminder, 400);
+  navigate('confirm');
+}
 </script>
